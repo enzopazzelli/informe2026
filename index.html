@@ -126,7 +126,16 @@
   <section id="tab-pago" hidden>
     <h2>1° Vivienda y Estado de Pago</h2>
     <div class="note">"OP" (Orden de Pago) en el Motivo Pase significa que el expediente ya está <b>pagado</b>. "Remito para control" significa que está <b>en trámite en Economía</b>, todavía no pagado. "(1° VIVIENDA)" en el Motivo marca la primera solicitud de esa ONG — ahí corresponde el pago de Herramientas. Se excluyeron del dataset los Baños y las solicitudes que referencian un expediente anterior a 2026 (ver "Qué quedó suelto").</div>
+    <div class="stat-row" id="pago-stats"></div>
+
+    <h3 style="margin-top:24px">Gráficos</h3>
     <div class="charts-grid" id="charts-estado-pago"></div>
+
+    <h3 style="margin-top:24px">Vínculo con reclamos y con VISOC</h3>
+    <div class="note">Este cruce es por nombre de organización, igual que en el resto del informe — no hay número de expediente en común entre GDE y VISOC/reclamos, así que es un <b>piso</b>, no un número exacto (puede haber más vínculos reales que el nombre no logra emparejar). Ver "Qué quedó suelto".</div>
+    <div id="pago-cruce"></div>
+
+    <h3 style="margin-top:24px">Detalle por filtro</h3>
     <div id="estado-pago-tablas"></div>
   </section>
 
@@ -310,12 +319,51 @@ function tablaExpedientes(filas){
 function pintarEstadoPago(){
   const totalPrimera = Object.values(DATA.graficos.estado_pago_primera).reduce((a,b)=>a+b,0);
   const totalTodas = Object.values(DATA.graficos.estado_pago_todas).reduce((a,b)=>a+b,0);
+  const pv = DATA.primera_vivienda;
+
+  document.getElementById('pago-stats').innerHTML = `
+    <div class="stat" title="Solicitudes de GDE cuyo Motivo dice &quot;(1° VIVIENDA)&quot; — la marca real de primera solicitud de la ONG, ahí corresponde el pago de Herramientas.">${'<b>'+pv.total+'</b>'}Primeras Viviendas</div>
+    <div class="stat" title="Cantidad de organizaciones distintas entre esas ${pv.total} solicitudes.">${'<b>'+pv.organizaciones_unicas+'</b>'}Organizaciones únicas</div>
+    <div class="stat" title="Con el presupuesto vigente antes del 1-ago-2026, según la fecha de la solicitud.">${'<b>'+pv.periodo_antes+'</b>'}Con presupuesto anterior</div>
+    <div class="stat" title="Con el presupuesto vigente desde el 1-ago-2026, según la fecha de la solicitud.">${'<b>'+pv.periodo_desde+'</b>'}Con presupuesto nuevo</div>
+    <div class="stat" title="Estimado: proporción de estas solicitudes sobre el total Social-ONG, aplicada a las Activadas ONG-Social de VISOC, al precio de Herramientas. Ver pestaña Decisiones.">${'<b>'+fmtMoney(pv.monto_herramientas_estimado)+'</b>'}Monto Herramientas (estimado)</div>
+    <div class="stat" title="De las ${pv.organizaciones_unicas} organizaciones de 1° vivienda, cuántas tienen al menos un reclamo vinculado por nombre (piso, no exacto).">${'<b>'+pv.organizaciones_con_reclamo+' de '+pv.organizaciones_unicas+'</b>'}Organizaciones con reclamo</div>
+    <div class="stat" title="De las ${pv.organizaciones_unicas} organizaciones de 1° vivienda, cuántas tienen algún vínculo detectado en los 3 reportes de VISOC (piso, no exacto).">${'<b>'+pv.organizaciones_con_visoc+' de '+pv.organizaciones_unicas+'</b>'}Organizaciones con vínculo en VISOC</div>
+  `;
+
   document.getElementById('charts-estado-pago').innerHTML = `
     <div class="chart-card"><h3 title="Solicitudes con &quot;(1° VIVIENDA)&quot; en el Motivo, partidas por lo que dice su Motivo Pase.">Primeras Viviendas (${totalPrimera}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_primera)}</div>
     <div class="chart-card"><h3 title="Todas las solicitudes limpias del período (sin Guarda Temporal, sin Baños, sin referencia a expediente anterior), partidas por lo que dice su Motivo Pase.">Todas las solicitudes (${totalTodas}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_todas)}</div>
     <div class="chart-card"><h3 title="Según el export del área 'INCLUSIONES CON ORDEN DE PAGO' (243 de 1003, más confiable que adivinar 'OP' por texto: ese texto muestra el ÚLTIMO paso, y puede decir otra cosa aunque el expediente ya haya tenido orden de pago antes).">Orden de Pago — confirmado por el área</h3>${pieSVG(DATA.graficos.orden_pago)}</div>
-    <div class="chart-card"><h3 title="Las 72 Primeras Viviendas, en los 3 baldes acordados con el área: Con OP / En trámite en Economía / En Trámite.">Primeras Viviendas — Con OP / Economía / En Trámite</h3>${pieSVG(DATA.graficos.pago_baldes_primera)}</div>
+    <div class="chart-card"><h3 title="Las ${pv.total} Primeras Viviendas, en los 3 baldes acordados con el área: Con OP / En trámite en Economía / En Trámite.">Primeras Viviendas — Con OP / Economía / En Trámite</h3>${pieSVG(DATA.graficos.pago_baldes_primera)}</div>
+    <div class="chart-card"><h3 title="Departamento sacado del texto de la solicitud, solo para las ${pv.total} Primeras Viviendas.">Primeras Viviendas — Distribución geográfica</h3>${pieSVG(DATA.graficos.geografico_primera)}</div>
+    <div class="chart-card"><h3 title="De las ${pv.total} Primeras Viviendas, cuántas caen antes vs. después del cambio de presupuesto del 1-ago-2026.">Primeras Viviendas — Período de presupuesto</h3>${pieSVG({'Antes de ago-2026': pv.periodo_antes, 'Desde ago-2026': pv.periodo_desde})}</div>
   `;
+
+  const orgsPrimera = DATA.organizaciones.filter(o => o.expedientes.some(e => e.primera_vivienda));
+  const orgsPrimeraConReclamo = orgsPrimera.filter(o => o.reclamos.length);
+  const orgsPrimeraConVisoc = orgsPrimera.filter(o => o.visoc.solicitadas + o.visoc.activadas + o.visoc.finalizadas > 0);
+
+  let cruceHtml = `<h4 style="margin-top:0">Reclamos vinculados a organizaciones de 1° vivienda (${pv.reclamos_vinculados})</h4>`;
+  if (orgsPrimeraConReclamo.length) {
+    cruceHtml += `<div style="overflow-x:auto"><table><thead><tr><th>Organización</th><th>1° viviendas</th><th>Reclamos</th></tr></thead><tbody>` +
+      orgsPrimeraConReclamo.map(o => `<tr><td style="text-align:left">${o.nombre}</td><td>${o.expedientes.filter(e=>e.primera_vivienda).length}</td><td>${o.reclamos.length}</td></tr>`).join('') +
+      `</tbody></table></div>`;
+  } else {
+    cruceHtml += `<p style="color:var(--muted);font-size:.85rem">Ninguna organización de 1° vivienda tiene un reclamo vinculado por nombre.</p>`;
+  }
+  cruceHtml += `<h4>Vínculo con VISOC (${pv.organizaciones_con_visoc} de ${pv.organizaciones_unicas} organizaciones)</h4>`;
+  if (orgsPrimeraConVisoc.length) {
+    cruceHtml += `<div style="overflow-x:auto"><table><thead><tr><th>Organización</th><th>1° viviendas</th><th>Pend. activar (VISOC)</th><th>Activadas (VISOC)</th><th>Finalizadas (VISOC)</th></tr></thead><tbody>` +
+      orgsPrimeraConVisoc.map(o => `<tr><td style="text-align:left">${o.nombre}</td><td>${o.expedientes.filter(e=>e.primera_vivienda).length}</td><td>${o.visoc.solicitadas}</td><td>${o.visoc.activadas}</td><td>${o.visoc.finalizadas}</td></tr>`).join('') +
+      `</tbody></table></div>`;
+  } else {
+    cruceHtml += `<p style="color:var(--muted);font-size:.85rem">Ninguna organización de 1° vivienda tiene vínculo detectado en VISOC todavía.</p>`;
+  }
+  if (pv.visoc_activadas === 0 && pv.visoc_finalizadas === 0) {
+    cruceHtml += `<div class="note">Ojo: entre las organizaciones de 1° vivienda con vínculo en VISOC, ninguna aparece todavía como Activada o Finalizada — el monto de Herramientas de arriba es una <b>proporción</b> aplicada sobre el total de Activadas ONG-Social de VISOC, no está calculado sobre estas viviendas puntuales identificadas. Ver pestaña Decisiones.</div>`;
+  }
+  document.getElementById('pago-cruce').innerHTML = cruceHtml;
 
   const escenarios = [
     ['Primeras Viviendas — 3 baldes (Con OP / Economía / En Trámite)', EXPEDIENTES.filter(e => e.primera_vivienda), 'balde'],
