@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informe OG / ONG — Viviendas (01-01 al 01-09-2026)</title>
+<style>
+  :root {
+    --navy: #1f3a4d; --teal: #2c7a7b; --bg: #f7f8fa; --card: #ffffff;
+    --border: #dfe3e8; --text: #23303b; --muted: #667080;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--navy); color: #fff; padding: 18px 28px; }
+  header h1 { margin: 0; font-size: 1.3rem; font-weight: 600; }
+  header p { margin: 4px 0 0; font-size: .85rem; color: #c9d6dd; }
+  nav { display:flex; gap:4px; background:#16303f; padding: 0 24px; overflow-x:auto; }
+  nav button { background:none; border:none; color:#cfe0e7; padding:12px 18px; font-size:.9rem; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+  nav button:hover { color:#fff; }
+  nav button.active { color:#fff; border-bottom-color: var(--teal); font-weight:600; }
+  main { padding: 20px 28px 60px; max-width: 1400px; margin: 0 auto; }
+  section[hidden] { display:none; }
+  h2 { font-size:1.1rem; margin: 22px 0 10px; color: var(--navy); }
+  table { border-collapse: collapse; width:100%; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  th, td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:right; font-size:.85rem; }
+  th:first-child, td:first-child { text-align:left; }
+  th { background:#eef1f4; color:var(--navy); font-weight:600; position:sticky; top:0; }
+  tr:hover td { background:#f5f9fa; }
+  .total-row td { font-weight:700; background:#eef6f5; }
+  td[title]:first-child, th[title] { cursor:help; border-bottom:1px dashed var(--muted); }
+  .charts-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:16px; margin-top:18px; }
+  .chart-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; }
+  .chart-card h3 { margin:0 0 8px; font-size:.9rem; color:var(--navy); cursor:help; border-bottom:1px dashed var(--muted); display:inline-block; }
+  .chart-card svg { display:block; margin:0 auto; }
+  .legend { font-size:.78rem; margin-top:8px; }
+  .legend div { display:flex; align-items:center; gap:6px; margin:3px 0; }
+  .swatch { width:10px; height:10px; border-radius:2px; flex:0 0 auto; }
+  .browser { display:flex; gap:18px; align-items:flex-start; }
+  #org-tree { width:340px; flex:0 0 340px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px; max-height:75vh; overflow:auto; }
+  #org-search { width:100%; padding:8px 10px; margin-bottom:8px; border:1px solid var(--border); border-radius:6px; font-size:.85rem; }
+  #org-tree details { margin-bottom:4px; }
+  #org-tree summary { cursor:pointer; font-weight:600; padding:6px 4px; color:var(--navy); font-size:.88rem; }
+  #org-tree .subtipo summary { font-weight:500; color:var(--muted); font-size:.82rem; padding-left:10px; }
+  #org-tree .org-item { display:block; width:100%; text-align:left; padding:4px 4px 4px 22px; background:none; border:none; font-size:.82rem; cursor:pointer; color:var(--text); border-radius:4px; }
+  #org-tree .org-item:hover { background:#eef6f5; }
+  #org-tree .org-item .n { color:var(--muted); font-size:.75rem; }
+  #org-detail { flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px; min-height:300px; }
+  #org-detail h3 { margin-top:0; color:var(--navy); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.72rem; font-weight:600; margin-left:8px; }
+  .badge.fin { background:#dff3ea; color:#1f7a4d; }
+  .badge.curso { background:#fff2d9; color:#8a5a00; }
+  .badge.confirmar { background:#fdeaea; color:#a13636; }
+  .stat-row { display:flex; gap:14px; flex-wrap:wrap; margin: 10px 0 16px; }
+  .stat { background:#f3f6f7; border-radius:8px; padding:8px 14px; font-size:.8rem; cursor:help; }
+  .stat b { display:block; font-size:1.15rem; color:var(--navy); }
+  .note { background:#fff8e6; border:1px solid #f0dca0; border-radius:8px; padding:10px 14px; font-size:.82rem; color:#6b5300; margin:10px 0; }
+  .placeholder { color:var(--muted); font-size:.9rem; text-align:center; padding:60px 0; }
+  ul.sueltos li { margin-bottom:10px; line-height:1.5; }
+  #reclamos-table input { width:280px; max-width:100%; padding:6px 10px; margin-bottom:10px; border:1px solid var(--border); border-radius:6px; }
+  footer { text-align:center; color:var(--muted); font-size:.75rem; padding:20px; }
+  .filtros-panel { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px; }
+  .filtros-panel .campo { display:flex; flex-direction:column; gap:4px; font-size:.78rem; color:var(--muted); }
+  .filtros-panel input, .filtros-panel select { padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:.85rem; }
+  .filtros-panel label.chk { flex-direction:row; align-items:center; gap:6px; font-size:.82rem; color:var(--text); }
+  .decision-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+  .decision-card h4 { margin:0 0 6px; color:var(--navy); font-size:.95rem; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+  .decision-card p { margin:4px 0; font-size:.86rem; line-height:1.5; }
+  .decision-card .label { font-weight:600; color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; }
+
+  @media (max-width: 760px) {
+    header { padding:14px 16px; }
+    nav { padding:0 10px; }
+    main { padding:14px 16px 40px; }
+    .browser { flex-direction:column; }
+    #org-tree { width:100%; flex:none; max-height:260px; }
+    #org-detail { width:100%; padding:14px; }
+    table { font-size:.78rem; }
+    th, td { padding:6px 7px; }
+    .filtros-panel { flex-direction:column; align-items:stretch; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-card svg { width:100%; height:auto; max-width:220px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Informe de solicitudes OG / ONG — Programa de Vivienda</h1>
+  <p>Período 01-01 al 01-09-2026 · GDE + VISOC (solicitadas / activadas / finalizadas) · Uso interno, no publicar</p>
+</header>
+<nav>
+  <button class="tab-btn active" data-tab="resumen">Resumen</button>
+  <button class="tab-btn" data-tab="instituciones">Instituciones</button>
+  <button class="tab-btn" data-tab="pago">1° Vivienda y Estado de Pago</button>
+  <button class="tab-btn" data-tab="reportes">Reportes por fecha</button>
+  <button class="tab-btn" data-tab="reclamos">Reclamos</button>
+  <button class="tab-btn" data-tab="sueltos">Qué quedó suelto</button>
+  <button class="tab-btn" data-tab="decisiones">Decisiones (para revisar)</button>
+</nav>
+<main>
+
+  <section id="tab-resumen">
+    <h2>Tabla resumen</h2>
+    <p style="color:var(--muted); font-size:.8rem; margin-top:-6px">Pasá el mouse sobre el nombre de cada fila para ver qué se tuvo en cuenta.</p>
+    <div style="overflow-x:auto"><table id="tabla-resumen"></table></div>
+
+    <h2>Presupuesto según fecha de solicitud</h2>
+    <div class="note">El presupuesto cambió el 1° de agosto de 2026: las solicitudes de <b>antes</b> de esa fecha usan el monto anterior; las de <b>agosto en adelante</b>, el monto nuevo. Esto se puede calcular con certeza sobre las <i>solicitudes</i> (GDE, tienen fecha); no sobre las <i>Activadas</i> de VISOC, que no traen fecha por registro — ver "Decisiones".</div>
+    <div style="overflow-x:auto"><table id="tabla-periodo"></table></div>
+
+    <h2>Gráficos</h2>
+    <p style="color:var(--muted); font-size:.8rem; margin-top:-6px">Pasá el mouse sobre el título de cada gráfico, o sobre una porción, para ver el detalle.</p>
+    <div class="charts-grid" id="charts"></div>
+  </section>
+
+  <section id="tab-instituciones" hidden>
+    <h2>Instituciones</h2>
+    <div class="browser">
+      <aside id="org-tree">
+        <input id="org-search" type="text" placeholder="Buscar organización...">
+        <div id="org-tree-body"></div>
+      </aside>
+      <div id="org-detail"><div class="placeholder">Elegí una organización de la izquierda para ver sus expedientes y reclamos.</div></div>
+    </div>
+  </section>
+
+  <section id="tab-pago" hidden>
+    <h2>1° Vivienda y Estado de Pago</h2>
+    <div class="note">"OP" (Orden de Pago) en el Motivo Pase significa que el expediente ya está <b>pagado</b>. "Remito para control" significa que está <b>en trámite en Economía</b>, todavía no pagado. "(1° VIVIENDA)" en el Motivo marca la primera solicitud de esa ONG — ahí corresponde el pago de Herramientas. Se excluyeron del dataset los Baños y las solicitudes que referencian un expediente anterior a 2026 (ver "Qué quedó suelto").</div>
+    <div class="charts-grid" id="charts-estado-pago"></div>
+    <div id="estado-pago-tablas"></div>
+  </section>
+
+  <section id="tab-reportes" hidden>
+    <h2>Reportes por fecha y estado</h2>
+    <div class="note">El rango de fechas solo se puede aplicar a lo que tiene fecha por registro: solicitudes y reclamos de GDE. Los 3 reportes de VISOC (Solicitudes pendientes, Activadas, Finalizadas) no traen fecha por registro, así que se muestran aparte, como referencia fija.</div>
+    <div id="reportes-filtros" class="filtros-panel"></div>
+    <div class="stat-row" id="reportes-stats"></div>
+    <div style="overflow-x:auto"><table id="reportes-tabla-cat"></table></div>
+    <h3 style="margin-top:20px">Detalle</h3>
+    <div style="overflow-x:auto"><table id="reportes-tabla-detalle"></table></div>
+    <div class="stat-row" id="reportes-visoc-ref"></div>
+  </section>
+
+  <section id="tab-reclamos" hidden>
+    <h2>Reclamos (90, enero a hoy)</h2>
+    <div class="note">Los reclamos citan un número de expediente en formato antiguo ("REF EXP", "REF.EXPTE.", etc.) que <b>no corresponde</b> al Número de Expediente de GDE de este export — solo se puede vincular el reclamo a la institución nombrada en el texto, no a un expediente puntual de esta base.</div>
+    <div id="reclamos-table"></div>
+  </section>
+
+  <section id="tab-sueltos" hidden>
+    <h2>Qué quedó suelto</h2>
+    <p style="color:var(--muted); font-size:.88rem; max-width:900px">En criollo: GDE y VISOC son dos sistemas que no se hablan entre sí. No comparten un número de expediente ni un nombre de organización escrito siempre igual, así que cruzarlos es, en el mejor de los casos, una aproximación. Esto es lo que no cierra, y por qué:</p>
+    <ul class="sueltos" id="sueltos-list"></ul>
+  </section>
+
+  <section id="tab-decisiones" hidden>
+    <h2>Decisiones a revisar con el área</h2>
+    <p style="color:var(--muted); font-size:.88rem; max-width:900px">
+      Ninguno de estos números viene de una fuente que ya diga "esto es Inicio Trámite" o "esto es
+      Activada" — hubo que decidir cómo leer cada archivo. Estas son esas decisiones, explicadas en
+      criollo, para que alguien del área diga cuáles están bien y cuáles hay que corregir. Las
+      marcadas <span class="badge confirmar">a confirmar</span> son las que más dependen de un
+      criterio que solo el área puede validar.
+    </p>
+    <div id="decisiones-list"></div>
+  </section>
+
+</main>
+<footer>informe_ong_og_2026 · datos generados por generar_datos_web.py, este HTML se edita a mano. Ver DECISIONES.md para el detalle de cada regla.</footer>
+
+<script src="datos_web.js"></script>
+<script>
+const CATS = DATA.categorias;
+const COLORS = ['#2c7a7b','#4a90a4','#d98e3a','#c25b4a','#8e7cc3','#5a9e6f','#b8b23a','#9aa5b1'];
+
+// Qué se tuvo en cuenta para cada fila del resumen — aparece al pasar el mouse.
+// Texto corto a propósito: el detalle completo está en la pestaña Decisiones.
+const TOOLTIPS_RESUMEN = {
+  'Inicio Trámite (VISOC: pendientes + activadas)': 'Pendientes de activar + Activadas (VISOC). Coincide con el "Total General" que imprime el propio VISOC — confirmado por el área. Ver pestaña Decisiones.',
+  'Solicitudes pendientes de activar (VISOC)': 'Del reporte de Solicitadas de VISOC: expedientes que todavía no llegaron a la etapa de Activada.',
+  'Activadas (VISOC)': 'El paso justo antes del Acta de Finalización (no el arranque de obra) — se activa cuando el técnico certifica el 100% de la obra. Por eso se parece a Finalizadas, no a Trámite Finalizado de GDE.',
+  'Viv. en Construcción (Activada, VISOC)': 'Activadas menos Fin de Obra, ambas columnas del mismo reporte de Activadas.',
+  'Viv. c/ Acta de Finalización (VISOC)': 'Reporte dedicado de VISOC. Mide cuánto se construyó DURANTE el período (de solicitudes de cualquier año), no cuánto del lote de solicitudes 2026 ya está terminado.',
+  'Expedientes GDE del período (administrativo)': 'Solicitudes de inclusión que entraron por GDE en el período, ya sin los 66 expedientes de Guarda Temporal y sin los que citan un expediente anterior a 2026 en su Motivo Pase (verificación de derrumbe, expediente dado de baja, acta/liquidación de expediente ya pagado, etc. — no son solicitudes nuevas).',
+  'Trámite Finalizado (administrativo, GDE)': 'El "Motivo Pase" del expediente dice "finalización de trámite" (con variantes de tipeo). Es el cierre administrativo de la solicitud, no de la obra.',
+  'Viv. c/ Reclamos (GDE)': 'Reclamos de GDE, vinculados a cada institución por el nombre que figura en el texto (no hay número de expediente en común).',
+  'MONTOS (estimado sobre Activadas)': 'Estimado sobre las viviendas Activadas de VISOC (no sobre lo solicitado), al precio vigente desde agosto 2026.',
+  'V. Social (estimado)': 'Activadas × precio Social (1D o 2D según Beneficiarios/Solicitudes de VISOC), prorrateado por la proporción de Vivienda Social observada en GDE.',
+  'V. Ecológica (estimado)': 'Activadas × precio Ecológica, prorrateado por la proporción de Vivienda Ecológica observada en GDE. Solo OG: ningún ONG pidió Ecológica en los datos.',
+  'Herramientas (estimado, solo ONG 1° vivienda)': '72 de las solicitudes GDE dicen "(1° VIVIENDA)" en el texto — es la marca real de 1° solicitud. Se aplica esa proporción (72 sobre el total de Social-ONG) a las Activadas ONG-Social, al precio de Herramientas.',
+};
+
+const TOOLTIPS_GRAFICOS = {
+  'Instituciones (Inicio Trámite)': 'Inicio Trámite (GDE, ya limpio de Guarda Temporal / referencia previa / Baños) partido por categoría de solicitante.',
+  'Inicio Trámite — Con OP / Economía / En Trámite': 'Los 1003 expedientes de Inicio Trámite, agrupados en los 3 baldes acordados con el área: Con Orden de Pago (según el export del área) / En trámite en Economía (Remito) / En Trámite (el resto). Se desestimó Activadas de VISOC como base porque no se puede trazar a expedientes puntuales.',
+  'Distribución geográfica': 'Departamento sacado del texto de la solicitud de GDE. "Sin dato": formatos nuevos que codifican la zona con un código corto en vez de nombrarla.',
+  'Prototipo de vivienda': 'Tipo de vivienda (Social/Ecológica/Baño) sacado del texto de la solicitud de GDE.',
+  'Vía de ingreso': 'Solicitudes de inclusión (GDE) vs. Reclamos (GDE) del mismo período.',
+  'Monto estimado por categoría ($)': 'Suma de V. Social + V. Ecológica + Herramientas del Resumen, partido por categoría.',
+  'Composición del monto ($)': 'Materiales, Mano de Obra y Herramientas según las proporciones reales de los precios de referencia — Herramientas ya prorrateada por la marca "(1° VIVIENDA)" de GDE.',
+};
+
+function fmtMoney(v){
+  return '$ ' + Math.round(v).toLocaleString('es-AR');
+}
+
+// ---------- Tabla resumen ----------
+function pintarResumen(){
+  const t = document.getElementById('tabla-resumen');
+  let html = '<thead><tr><th>Estado / Concepto</th>';
+  CATS.forEach(c => html += `<th>${c}</th>`);
+  html += '<th>Total</th></tr></thead><tbody>';
+  DATA.resumen.forEach(fila => {
+    const esMonto = fila.nombre.includes('MONTOS') || fila.nombre.includes('estimado');
+    const esSub = fila.nombre.trim().startsWith('↳');
+    const estilo = esSub ? ' style="color:var(--muted);font-size:.8rem"' : '';
+    const clave = fila.nombre.replace(/^\s*↳\s*/, '').trim();
+    const tip = TOOLTIPS_RESUMEN[clave];
+    const tipAttr = tip ? ` title="${tip.replace(/"/g, '&quot;')}"` : '';
+    const fmt = v => v === '' ? '' : (esMonto ? fmtMoney(v) : v);
+    html += `<tr${estilo}><td${estilo}${tipAttr}>${fila.nombre}</td>`;
+    fila.valores.forEach(v => html += `<td${estilo}>${fmt(v)}</td>`);
+    html += `<td${estilo}><b>${fmt(fila.total)}</b></td></tr>`;
+  });
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+// ---------- Tabla de solicitudes por período de precio ----------
+function pintarPeriodo(){
+  const mp = DATA.montos_periodo;
+  const t = document.getElementById('tabla-periodo');
+  let html = '<thead><tr><th>Período</th>';
+  CATS.forEach(c => html += `<th>${c}</th>`);
+  html += '<th>Total</th></tr></thead><tbody>';
+  html += `<tr><td>Antes del 1-ago-2026 (presupuesto anterior)</td>`;
+  CATS.forEach(c => html += `<td>${mp.antes[c]}</td>`);
+  html += `<td><b>${mp.antes.total}</b></td></tr>`;
+  html += `<tr><td>Desde el 1-ago-2026 (presupuesto nuevo)</td>`;
+  CATS.forEach(c => html += `<td>${mp.desde[c]}</td>`);
+  html += `<td><b>${mp.desde.total}</b></td></tr>`;
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+// ---------- Graficos de torta (SVG) ----------
+function pieSVG(data, size=180, esMoneda=false){
+  const fmt = esMoneda ? fmtMoney : (v => v);
+  const entries = Object.entries(data).filter(([,v]) => v > 0);
+  const total = entries.reduce((s,[,v]) => s+v, 0);
+  const r = size/2 - 6, cx = size/2, cy = size/2;
+  let angle = -Math.PI/2;
+  let paths = '';
+  entries.forEach(([k,v], i) => {
+    const frac = v/total;
+    const a2 = angle + frac*2*Math.PI;
+    const x1 = cx + r*Math.cos(angle), y1 = cy + r*Math.sin(angle);
+    const x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
+    const large = frac > 0.5 ? 1 : 0;
+    if (entries.length === 1) {
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${COLORS[i%COLORS.length]}"><title>${k}: ${fmt(v)} (100%)</title></circle>`;
+    } else {
+      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${COLORS[i%COLORS.length]}"><title>${k}: ${fmt(v)} (${(frac*100).toFixed(1)}%)</title></path>`;
+    }
+    angle = a2;
+  });
+  let legend = '<div class="legend">';
+  entries.forEach(([k,v], i) => {
+    const pct = (v/total*100).toFixed(1);
+    legend += `<div><span class="swatch" style="background:${COLORS[i%COLORS.length]}"></span>${k}: ${fmt(v)} (${pct}%)</div>`;
+  });
+  legend += '</div>';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>${legend}`;
+}
+
+function pintarGraficos(){
+  const cont = document.getElementById('charts');
+  const specs = [
+    ['Instituciones (Inicio Trámite)', DATA.graficos.instituciones, false],
+    ['Inicio Trámite — Con OP / Economía / En Trámite', DATA.graficos.pago_baldes, false],
+    ['Distribución geográfica', DATA.graficos.geografico, false],
+    ['Prototipo de vivienda', DATA.graficos.prototipo, false],
+    ['Vía de ingreso', DATA.graficos.ingreso, false],
+    ['Monto estimado por categoría ($)', DATA.graficos.montos_categoria, true],
+  ];
+  let html = specs.map(([titulo, data, esMoneda]) =>
+    `<div class="chart-card"><h3 title="${(TOOLTIPS_GRAFICOS[titulo]||'').replace(/"/g,'&quot;')}">${titulo}</h3>${pieSVG(data, 180, esMoneda)}</div>`
+  ).join('');
+  html += `<div class="chart-card"><h3 title="${TOOLTIPS_GRAFICOS['Composición del monto ($)'].replace(/"/g,'&quot;')}">Composición del monto ($)</h3>${pieSVG(DATA.graficos.montos_componentes, 180, true)}</div>`;
+  cont.innerHTML = html;
+}
+
+// ---------- 1° Vivienda y Estado de Pago ----------
+function flattenExpedientes(){
+  const filas = [];
+  DATA.organizaciones.forEach(o => {
+    o.expedientes.forEach(e => filas.push({org: o.nombre, categoria: o.categoria, ...e}));
+  });
+  return filas;
+}
+const EXPEDIENTES = flattenExpedientes();
+
+function tablaExpedientes(filas){
+  if (!filas.length) return '<p style="color:var(--muted);font-size:.82rem">Sin expedientes.</p>';
+  return `<div style="overflow-x:auto"><table><thead><tr><th>Institución</th><th>Categoría</th><th>Número</th><th>Fecha</th><th>Estado</th><th>Motivo Pase</th></tr></thead><tbody>` +
+    filas.map(e => `<tr><td style="text-align:left">${e.org}</td><td style="text-align:left">${e.categoria}</td><td style="text-align:left">${e.numero||''}</td><td>${e.fecha||''}</td><td>${e.estado||''}</td><td style="text-align:left">${e.motivo_pase||''}</td></tr>`).join('') +
+    `</tbody></table></div>`;
+}
+
+function pintarEstadoPago(){
+  const totalPrimera = Object.values(DATA.graficos.estado_pago_primera).reduce((a,b)=>a+b,0);
+  const totalTodas = Object.values(DATA.graficos.estado_pago_todas).reduce((a,b)=>a+b,0);
+  document.getElementById('charts-estado-pago').innerHTML = `
+    <div class="chart-card"><h3 title="Solicitudes con &quot;(1° VIVIENDA)&quot; en el Motivo, partidas por lo que dice su Motivo Pase.">Primeras Viviendas (${totalPrimera}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_primera)}</div>
+    <div class="chart-card"><h3 title="Todas las solicitudes limpias del período (sin Guarda Temporal, sin Baños, sin referencia a expediente anterior), partidas por lo que dice su Motivo Pase.">Todas las solicitudes (${totalTodas}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_todas)}</div>
+    <div class="chart-card"><h3 title="Según el export del área 'INCLUSIONES CON ORDEN DE PAGO' (243 de 1003, más confiable que adivinar 'OP' por texto: ese texto muestra el ÚLTIMO paso, y puede decir otra cosa aunque el expediente ya haya tenido orden de pago antes).">Orden de Pago — confirmado por el área</h3>${pieSVG(DATA.graficos.orden_pago)}</div>
+    <div class="chart-card"><h3 title="Las 72 Primeras Viviendas, en los 3 baldes acordados con el área: Con OP / En trámite en Economía / En Trámite.">Primeras Viviendas — Con OP / Economía / En Trámite</h3>${pieSVG(DATA.graficos.pago_baldes_primera)}</div>
+  `;
+
+  const escenarios = [
+    ['Primeras Viviendas — 3 baldes (Con OP / Economía / En Trámite)', EXPEDIENTES.filter(e => e.primera_vivienda), 'balde'],
+    ['Primeras Viviendas', EXPEDIENTES.filter(e => e.primera_vivienda), 'estado_pago'],
+    ['Todas las solicitudes (no solo primeras viviendas)', EXPEDIENTES, 'estado_pago'],
+    ['Con Orden de Pago (confirmado por el área)', EXPEDIENTES.filter(e => e.orden_pago), 'estado_pago'],
+  ];
+  let html = '';
+  escenarios.forEach(([titulo, base, campo]) => {
+    html += `<h3 style="margin-top:24px">${titulo} (${base.length})</h3>`;
+    const porEstado = {};
+    base.forEach(e => { (porEstado[e[campo]] = porEstado[e[campo]] || []).push(e); });
+    Object.keys(porEstado).sort((a,b) => porEstado[b].length - porEstado[a].length).forEach(estado => {
+      const filas = porEstado[estado];
+      html += `<details style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:600;padding:6px 0;color:var(--navy)">${estado} (${filas.length})</summary>${tablaExpedientes(filas)}</details>`;
+    });
+  });
+  document.getElementById('estado-pago-tablas').innerHTML = html;
+}
+
+// ---------- Instituciones: arbol + detalle ----------
+function agruparOrgs(){
+  const porCategoria = {};
+  CATS.forEach(c => porCategoria[c] = {});
+  DATA.organizaciones.forEach((o, idx) => {
+    porCategoria[o.categoria] = porCategoria[o.categoria] || {};
+    porCategoria[o.categoria][o.subtipo] = porCategoria[o.categoria][o.subtipo] || [];
+    porCategoria[o.categoria][o.subtipo].push(idx);
+  });
+  return porCategoria;
+}
+const ORG_TREE = agruparOrgs();
+
+function pintarArbol(filtro){
+  const body = document.getElementById('org-tree-body');
+  const f = (filtro||'').trim().toUpperCase();
+  let html = '';
+  CATS.forEach(cat => {
+    const subtipos = ORG_TREE[cat] || {};
+    let subtipoHtml = '';
+    let catCount = 0;
+    Object.keys(subtipos).sort().forEach(sub => {
+      const idxs = subtipos[sub].filter(i => !f || DATA.organizaciones[i].nombre.toUpperCase().includes(f));
+      if (!idxs.length) return;
+      catCount += idxs.length;
+      const items = idxs
+        .sort((a,b) => (DATA.organizaciones[b].expedientes.length+DATA.organizaciones[b].reclamos.length) - (DATA.organizaciones[a].expedientes.length+DATA.organizaciones[a].reclamos.length))
+        .map(i => {
+          const o = DATA.organizaciones[i];
+          return `<button class="org-item" data-idx="${i}">${o.nombre} <span class="n">(${o.expedientes.length} exp${o.reclamos.length ? ', '+o.reclamos.length+' recl' : ''})</span></button>`;
+        }).join('');
+      subtipoHtml += `<details class="subtipo" ${f ? 'open' : ''}><summary>${sub} (${idxs.length})</summary>${items}</details>`;
+    });
+    if (subtipoHtml) {
+      html += `<details ${f ? 'open' : ''} open><summary>${cat} (${catCount})</summary>${subtipoHtml}</details>`;
+    }
+  });
+  body.innerHTML = html || '<p style="color:var(--muted);font-size:.85rem">Sin resultados.</p>';
+  body.querySelectorAll('.org-item').forEach(btn => {
+    btn.addEventListener('click', () => mostrarOrg(parseInt(btn.dataset.idx)));
+  });
+}
+
+function mostrarOrg(idx){
+  const o = DATA.organizaciones[idx];
+  const det = document.getElementById('org-detail');
+  let html = `<h3>${o.nombre}</h3>`;
+  html += `<div class="stat-row">
+    <div class="stat" title="Cantidad de expedientes de inclusión de GDE de esta organización en el período.">${'<b>'+o.expedientes.length+'</b>'}Expedientes (GDE)</div>
+    <div class="stat" title="Reclamos de GDE vinculados a esta organización por nombre.">${'<b>'+o.reclamos.length+'</b>'}Reclamos</div>
+    <div class="stat" title="Del reporte de Solicitadas de VISOC: todavía no llegaron a Activada.">${'<b>'+o.visoc.solicitadas+'</b>'}Pend. activar (VISOC)</div>
+    <div class="stat" title="Paso previo al Acta de Finalización en VISOC (no el arranque de obra).">${'<b>'+o.visoc.activadas+'</b>'}Activadas (VISOC)</div>
+    <div class="stat" title="Del reporte dedicado de Finalizadas de VISOC (obra con acta).">${'<b>'+o.visoc.finalizadas+'</b>'}Finalizadas (VISOC)</div>
+  </div>`;
+  if (o.visoc.solicitadas + o.visoc.activadas + o.visoc.finalizadas === 0) {
+    html += `<div class="note">Esta organización no tiene coincidencia detectada en los reportes de VISOC (puede ser una solicitud muy reciente que todavía no llegó a VISOC, o el nombre no calza exactamente entre los dos sistemas — ver "Qué quedó suelto").</div>`;
+  }
+  if (o.expedientes.length) {
+    html += '<h4>Expedientes</h4><div style="overflow-x:auto"><table><thead><tr><th>Número</th><th>Fecha</th><th>Estado</th><th>Tipo</th><th>Depto</th><th>Motivo Pase</th></tr></thead><tbody>';
+    o.expedientes.forEach(e => {
+      const badge = e.finalizado ? '<span class="badge fin">Finalizado</span>' : '<span class="badge curso">En curso</span>';
+      html += `<tr><td style="text-align:left">${e.numero||''}</td><td>${e.fecha||''}</td><td>${e.estado||''} ${badge}</td><td>${e.tipo_vivienda||''}</td><td>${e.departamento||'—'}</td><td style="text-align:left">${e.motivo_pase||''}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+  if (o.reclamos.length) {
+    html += '<h4>Reclamos</h4><div style="overflow-x:auto"><table><thead><tr><th>Fecha</th><th>Detalle</th><th>Ref. legado</th></tr></thead><tbody>';
+    o.reclamos.forEach(r => {
+      html += `<tr><td>${r.fecha||''}</td><td style="text-align:left">${r.detalle||''}</td><td>${r.ref_legado||'—'}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+  det.innerHTML = html;
+}
+
+// ---------- Reclamos (listado plano) ----------
+function pintarReclamos(){
+  const filas = [];
+  DATA.organizaciones.forEach(o => {
+    o.reclamos.forEach(r => filas.push({org: o.nombre, categoria: o.categoria, ...r}));
+  });
+  filas.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  const cont = document.getElementById('reclamos-table');
+  cont.innerHTML = `<input id="reclamos-filtro" type="text" placeholder="Filtrar por institución...">
+    <table id="reclamos-tbl"><thead><tr><th>Fecha</th><th>Institución</th><th>Categoría</th><th>Detalle</th><th>Ref. legado</th></tr></thead><tbody></tbody></table>`;
+  function render(filtro){
+    const f = (filtro||'').toUpperCase();
+    const tbody = cont.querySelector('tbody');
+    tbody.innerHTML = filas.filter(r => !f || r.org.toUpperCase().includes(f)).map(r =>
+      `<tr><td>${r.fecha||''}</td><td style="text-align:left">${r.org}</td><td style="text-align:left">${r.categoria}</td><td style="text-align:left">${r.detalle||''}</td><td>${r.ref_legado||'—'}</td></tr>`
+    ).join('');
+  }
+  render('');
+  document.getElementById('reclamos-filtro').addEventListener('input', e => render(e.target.value));
+}
+
+// ---------- Que quedo suelto ----------
+function pintarSueltos(){
+  const s = DATA.sueltos;
+  const items = [
+    `<b>Desestimamos "Activadas" de VISOC como base de Inicio Trámite</b> (acuerdo del 03-09 con el área): esa cifra no se puede trazar a expedientes puntuales de 2026, es una caja negra del sistema. Inicio Trámite volvió a ser el conteo de GDE (${s.gde_total}), partido en 3 baldes que sí son trazables: Con Orden de Pago, En trámite en Economía y En Trámite. Pendientes/Activadas de VISOC (${s.visoc_solicitadas_total} / ${s.visoc_activadas_total}) no desaparecieron, pero quedan como referencia aparte, no como el número principal.`,
+    `GDE y VISOC no se hablan entre sí: no comparten un número de expediente. Lo único que podemos comparar entre los dos es el nombre de la organización, y cada sistema lo escribe distinto. Por eso, cuando decimos que tal organización "está en VISOC" o "no está en VISOC", es una aproximación por texto, no una certeza. Esta es justo la razón de fondo por la que desestimamos Activadas como base: no hay forma confiable de bajarla a expedientes puntuales.`,
+    `De las ${s.visoc_organizaciones_unicas} organizaciones que aparecen en los 3 reportes de VISOC, la gran mayoría (<b>${s.visoc_organizaciones_sin_match_en_gde}</b>) no tiene ninguna solicitud nueva en el GDE de este período. Tiene sentido: VISOC va activando y terminando obra de pedidos que muchas veces son de hace años, no solo los de este corte de enero a septiembre.`,
+    `<b>Orden de Pago:</b> llegó un export del área con 245 expedientes que ya tuvieron orden de pago (243 sobreviven después de la limpieza) — se usa esa lista tal cual, más confiable que adivinar "OP" por el texto del Motivo Pase (que solo da 138, porque muestra el último paso, no el historial completo del expediente).`,
+    `De los ${s.reclamos_total} reclamos, ${s.reclamos_con_ref_legado} mencionan un número de expediente, y ese número es de un sistema viejo — no es el mismo formato que usa GDE ahora (que empieza con "EX-2026-"). Con los datos que tenemos no hay forma de saber a qué expediente puntual corresponde cada reclamo. Lo que sí sabemos siempre es contra qué institución es.`,
+    `El nombre de cada organización no está en un campo propio en ningún lado: en GDE hay que sacarlo del texto de la solicitud, mezclado con el nombre y DNI de la familia beneficiaria; en VISOC viene más prolijo, pero sin ningún dato que lo conecte con GDE. La forma de extraerlo funciona bien en la gran mayoría de los casos, pero no es perfecta — quedan algunos nombres largos o menos prolijos en la lista.`,
+    `No pudimos ubicar el departamento (Capital / Banda / Interior) de unas 300 de las ${s.gde_total} solicitudes: las más nuevas usan un código corto (por ejemplo "(A7)") en vez de nombrar el lugar, y no tenemos ninguna tabla que traduzca ese código a un departamento real.`,
+    `De las solicitudes de GDE se sacaron ${s.gde_guarda_temporal_excluidos} que quedaron en "Guarda Temporal", ${s.gde_referencia_previa_excluidos} que citan un expediente anterior a 2026 en su Motivo Pase (verificación de derrumbe, expediente dado de baja, etc.) y ${s.gde_banos_excluidos} de Baño — no son solicitudes nuevas de vivienda. Quedan ${s.gde_total} "limpias".`,
+    `El monto que mostramos sigue siendo una estimación sobre lo Activado (VISOC) — la misma cifra que acabamos de desestimar para Inicio Trámite. Es una tensión sin resolver todavía: ver la pestaña "Decisiones" para el detalle y la pregunta pendiente de mandarle al área (¿pasar Montos a la base de Orden de Pago?).`,
+  ];
+  document.getElementById('sueltos-list').innerHTML = items.map(i => `<li>${i}</li>`).join('');
+}
+
+// ---------- Reportes por fecha y estado ----------
+function flattenRegistros(){
+  const filas = [];
+  DATA.organizaciones.forEach(o => {
+    o.expedientes.forEach(e => filas.push({
+      tipo: 'solicitud', org: o.nombre, categoria: o.categoria, fecha: e.fecha,
+      finalizado: e.finalizado, periodo_precio: e.periodo_precio, detalle: e.motivo_pase,
+    }));
+    o.reclamos.forEach(r => filas.push({
+      tipo: 'reclamo', org: o.nombre, categoria: o.categoria, fecha: r.fecha,
+      finalizado: false, periodo_precio: null, detalle: r.detalle,
+    }));
+  });
+  return filas;
+}
+const REGISTROS = flattenRegistros();
+
+function pintarFiltrosReportes(){
+  const cont = document.getElementById('reportes-filtros');
+  cont.innerHTML = `
+    <div class="campo"><label>Desde</label><input type="date" id="rep-desde"></div>
+    <div class="campo"><label>Hasta</label><input type="date" id="rep-hasta"></div>
+    <div class="campo"><label>Tipo de registro</label>
+      <select id="rep-tipo">
+        <option value="inicio" selected>Inicio Trámite (todas las solicitudes)</option>
+        <option value="finalizado">Trámite Finalizado (administrativo)</option>
+        <option value="reclamo">Reclamos</option>
+        <option value="todo">Todo (solicitudes + reclamos)</option>
+      </select>
+    </div>
+    <div class="campo"><label>Categoría</label>
+      ${CATS.map(c => `<label class="chk" style="display:flex"><input type="checkbox" class="rep-cat" value="${c}" checked> ${c}</label>`).join('')}
+    </div>
+    <button id="rep-limpiar" style="padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;">Limpiar filtros</button>
+  `;
+  cont.querySelectorAll('input, select').forEach(el => el.addEventListener('input', aplicarFiltrosReportes));
+  document.getElementById('rep-limpiar').addEventListener('click', () => {
+    document.getElementById('rep-desde').value = '';
+    document.getElementById('rep-hasta').value = '';
+    document.getElementById('rep-tipo').value = 'inicio';
+    cont.querySelectorAll('.rep-cat').forEach(c => c.checked = true);
+    aplicarFiltrosReportes();
+  });
+}
+
+function aplicarFiltrosReportes(){
+  const desde = document.getElementById('rep-desde').value;
+  const hasta = document.getElementById('rep-hasta').value;
+  const tipo = document.getElementById('rep-tipo').value;
+  const cats = Array.from(document.querySelectorAll('.rep-cat:checked')).map(c => c.value);
+
+  const filtradas = REGISTROS.filter(r => {
+    if (!cats.includes(r.categoria)) return false;
+    if (tipo === 'inicio' && r.tipo !== 'solicitud') return false;
+    if (tipo === 'finalizado' && !(r.tipo === 'solicitud' && r.finalizado)) return false;
+    if (tipo === 'reclamo' && r.tipo !== 'reclamo') return false;
+    if (desde && r.fecha && r.fecha < desde) return false;
+    if (hasta && r.fecha && r.fecha > hasta) return false;
+    return true;
+  });
+
+  const antes = filtradas.filter(r => r.periodo_precio === 'antes').length;
+  const nuevo = filtradas.filter(r => r.periodo_precio === 'desde').length;
+  document.getElementById('reportes-stats').innerHTML = `
+    <div class="stat"><b>${filtradas.length}</b>Registros encontrados</div>
+    <div class="stat"><b>${antes}</b>Con presupuesto anterior (antes ago-2026)</div>
+    <div class="stat"><b>${nuevo}</b>Con presupuesto nuevo (desde ago-2026)</div>
+  `;
+
+  const porCat = {};
+  CATS.forEach(c => porCat[c] = 0);
+  filtradas.forEach(r => { porCat[r.categoria] = (porCat[r.categoria] || 0) + 1; });
+  document.getElementById('reportes-tabla-cat').innerHTML =
+    '<thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead><tbody>' +
+    CATS.map(c => `<tr><td>${c}</td><td>${porCat[c]}</td></tr>`).join('') +
+    `<tr class="total-row"><td>Total</td><td>${filtradas.length}</td></tr></tbody>`;
+
+  const ordenadas = filtradas.slice().sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 500);
+  document.getElementById('reportes-tabla-detalle').innerHTML =
+    '<thead><tr><th>Fecha</th><th>Tipo</th><th>Institución</th><th>Categoría</th><th>Detalle</th></tr></thead><tbody>' +
+    ordenadas.map(r => `<tr><td>${r.fecha || ''}</td><td>${r.tipo === 'reclamo' ? 'Reclamo' : (r.finalizado ? 'Finalizado' : 'En curso')}</td><td style="text-align:left">${r.org}</td><td style="text-align:left">${r.categoria}</td><td style="text-align:left">${(r.detalle || '').slice(0, 140)}</td></tr>`).join('') +
+    '</tbody>';
+  if (filtradas.length > 500) {
+    document.getElementById('reportes-tabla-detalle').insertAdjacentHTML('afterend',
+      `<p style="color:var(--muted);font-size:.78rem">Mostrando los 500 más recientes de ${filtradas.length}. Achicá el rango de fechas o la categoría para ver el resto.</p>`);
+  }
+}
+
+function pintarVisocRef(){
+  const s = DATA.sueltos;
+  document.getElementById('reportes-visoc-ref').innerHTML = `
+    <div class="stat"><b>${s.visoc_solicitadas_total}</b>Solicitudes pendientes de activar (VISOC, sin fecha por registro)</div>
+    <div class="stat"><b>${s.visoc_activadas_total}</b>Activadas (VISOC, sin fecha por registro)</div>
+    <div class="stat"><b>${s.visoc_finalizadas_total}</b>Finalizadas (VISOC, sin fecha por registro)</div>
+  `;
+}
+
+// ---------- Decisiones (para revisar con el area) ----------
+function pintarDecisiones(){
+  const p = DATA.precios;
+  const decisiones = [
+    { t: 'Inicio Trámite = conteo de GDE (1003), no Pendientes + Activadas de VISOC', c: false,
+      x: `<b>Cambio de criterio acordado con el área (03-09-2026):</b> se desestima "Activadas" de VISOC como base de Inicio Trámite, porque esa cifra no se puede trazar a expedientes puntuales de 2026 (VISOC mezcla el período con años anteriores sin dar el detalle por registro — ver "Qué quedó suelto"). Inicio Trámite vuelve a ser el conteo de GDE, ya limpio (1003), partido en 3 baldes que sí son trazables expediente por expediente: <b>Con Orden de Pago (243)</b>, <b>En trámite en Economía / Remito (1)</b>, y <b>En Trámite (759, incluye los 163 de Trámite Finalizado administrativo)</b>. Pendientes de activar y Activadas de VISOC no desaparecen, pero pasan a la sección "VISOC (referencia)" del Resumen, ya no son la base del número principal.` },
+    { t: 'Por qué "En trámite en Economía" da 1 y no ~18', c: false,
+      x: 'Si un expediente ya tiene Orden de Pago confirmada por el export del área, cuenta como "Con Orden de Pago" aunque su Motivo Pase actual diga "remito para control" (por ejemplo, un control posterior al pago) — el archivo del área manda sobre el texto. De los 18 expedientes que dicen "remito" por texto, 17 ya tenían OP confirmada; por eso el balde "Economía" queda en 1.' },
+    { t: 'Orden de Pago — confirmado por el área, no por texto', c: false,
+      x: 'Llegó un export del área ("INCLUSIONES CON ORDEN DE PAGO", 245 expedientes, 243 sobreviven después de la limpieza) que dice cuáles YA tuvieron orden de pago — se usa tal cual (por Número de Expediente), no se intenta adivinar por texto. Adivinar por texto ("OP" en el Motivo Pase actual) solo encuentra 138 de los 1003, porque el texto muestra el ÚLTIMO paso del expediente, no su historial completo: uno puede haber tenido OP hace tiempo y ya haber avanzado a otra cosa.' },
+    { t: 'Qué es "Activar" en VISOC', c: false,
+      x: 'El área explicó el proceso real: "Activar" no es el arranque de la obra, es el paso justo <b>antes</b> del Acta de Finalización. Cuando el técnico certifica el 100% de la obra, alguien del área "activa" el expediente en VISOC (pone fecha, calcula con la Resolución Ministerial y el monto cuántos dormitorios corresponden) para que recién ahí el técnico pueda emitir el acta. Por eso Activadas (1097) y Finalizadas (1011) están cerca entre sí. Igual, esto ya no se usa como base de Inicio Trámite (ver primera tarjeta) — queda como dato de contexto.' },
+    { t: 'Trámite Finalizado (administrativo, GDE)', c: true,
+      x: 'De los expedientes de GDE, se cuentan los que en su "Motivo Pase" dicen algo como "finalización de trámite" (con variantes de tipeo) — 163 de 1003. Es el cierre del trámite administrativo de la <i>solicitud</i>, no de la obra. Hoy queda incluido dentro del balde "En Trámite" (759) como sub-detalle. <b>A confirmar:</b> ¿esa frase es la señal correcta de cierre?' },
+    { t: 'Se sacaron 40 solicitudes que citan un expediente anterior a 2026, y 7 de Baño', c: false,
+      x: 'Búsqueda en el Motivo Pase de referencias a expedientes de años anteriores (verificación de derrumbe de la vivienda originaria, expediente previo dado de baja, agregar acta/liquidación a un expediente ya pagado, familia con expediente previo, reclamo en curso): 42 en total, 2 ya estaban dentro de los 66 de Guarda Temporal — 40 excluidas netas. Además se sacaron 7 solicitudes de Baño (a pedido del usuario, no son vivienda nueva). De 1116 originales: −66 Guarda Temporal −40 referencia previa −7 Baños = <b>1003 limpias</b>.' },
+    { t: 'Viv. c/ Acta de Finalización (VISOC) — throughput del período, no del lote 2026', c: true,
+      x: `Sale del reporte dedicado a finalizadas de VISOC (1011). El área aclaró algo importante: este número mide <b>cuántas viviendas de cualquier año llegaron a Fin de Obra durante enero-septiembre 2026</b> (throughput del período) — no cuántas de las ~1003 solicitudes <i>nuevas</i> de este mismo período ya están terminadas (esa cifra, la del "lote 2026", el área la estima a ojo en unas 200 y la va a confirmar revisando el historial completo de cada vivienda en VISOC, algo que intentó hacer pero el sistema se le trabó). Son dos preguntas distintas y válidas. <b>A confirmar:</b> cuando el área consiga el historial por vivienda, vamos a poder calcular también esta segunda pregunta.` },
+    { t: 'Viv. en Construcción (VISOC, referencia)', c: true,
+      x: 'Es la resta entre Activadas y Fin de Obra, tomando ambas columnas del mismo reporte de Activadas (para no mezclar archivos distintos). Como Activadas quedó desestimada como base de Inicio Trámite, esta fila también pasó a la sección "VISOC (referencia)" del Resumen. <b>A confirmar:</b> ¿toda vivienda activada y todavía no finalizada está "en construcción", o hay algún estado intermedio que no estamos viendo?' },
+    { t: 'Tipo de solicitante (OG Comisión Municipal / OG Municipio / ONG)', c: true,
+      x: 'Se decide buscando palabras clave en el texto de la solicitud ("Comisión Municipal", "Municipalidad", etc.); todo lo demás (asociaciones civiles, cooperativas, comisiones de fomento, bibliotecas populares, comunidades indígenas...) se cuenta como ONG. <b>A confirmar:</b> ¿una Comisión de Fomento o Comisión Rural debería ir en ONG, o es en realidad un organismo de gobierno?' },
+    { t: 'Prototipo (1 o 2 dormitorios)', c: true,
+      x: 'Se calcula dividiendo Beneficiarios sobre Solicitudes de cada organización en VISOC: si da 1, es 1 dormitorio; si da 2 o más, es 2 dormitorios. El área ya confirmó arrancar con 2 dormitorios como supuesto de base. <b>A confirmar:</b> cuando estén depuradas cuáles son de 1 dormitorio, recalcular con ese dato real.' },
+    { t: 'Monto estimado (V. Social + V. Ecológica + Herramientas) — misma tensión que Inicio Trámite', c: true,
+      x: `Se sigue calculando sobre las viviendas <b>Activadas de VISOC</b> (no sobre lo solicitado), porque el área confirmó que activar la vivienda es lo que dispara el desembolso — pero esa es la misma cifra que se acaba de desestimar como base de Inicio Trámite por no ser trazable. <b>Todavía no se resolvió</b> si Montos debería pasar a calcularse sobre "Con Orden de Pago" (243, trazable) en vez de Activadas (1097). Además, el presupuesto cambió el 1° de agosto de 2026 y VISOC no guarda la fecha de activación, así que se usa el precio nuevo para todas como aproximación. <b>A confirmar con el área:</b> ¿pasamos Montos a la base de Orden de Pago?` },
+    { t: 'Ítem Herramientas', c: true,
+      x: 'Se encontró la marca real: 72 de las 1003 solicitudes GDE dicen "(1° VIVIENDA)" al final del texto — y las 72 son ONG y de tipo Social, exactamente donde corresponde Herramientas. Se usa la proporción (72 sobre el total de solicitudes Social-ONG) aplicada a las Activadas ONG-Social para estimar cuántas son "1° vivienda", y se valoriza al precio de Herramientas — misma base de Activadas que el punto anterior. <b>A confirmar:</b> ¿esa marca "(1° VIVIENDA)" identifica de forma confiable la primera solicitud de cada ONG?' },
+    { t: 'Distribución geográfica (Capital / Banda / Interior)', c: false,
+      x: 'Se saca del departamento mencionado en el texto de la solicitud. En unas 300 de las 1003 no se pudo determinar: los formatos de texto más nuevos usan un código corto (ej. "(A7)") en vez de nombrar el departamento.' },
+  ];
+  const cards = decisiones.map(d => `
+    <div class="decision-card">
+      <h4>${d.t} ${d.c ? '<span class="badge confirmar">a confirmar</span>' : ''}</h4>
+      <p>${d.x}</p>
+    </div>`).join('');
+  const money = v => '$' + Math.round(v).toLocaleString('es-AR');
+  const tablaPrecios = `
+    <div class="decision-card">
+      <h4>Precios de referencia usados</h4>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Ítem</th><th>Antes del 1-ago-2026</th><th>Desde el 1-ago-2026</th></tr></thead>
+        <tbody>
+          <tr><td>Social, 1 dormitorio</td><td>OG ${money(p.antes.SOCIAL_1D.OG)} / ONG ${money(p.antes.SOCIAL_1D.ONG)}</td><td>OG ${money(p.desde.SOCIAL_1D.OG)} / ONG ${money(p.desde.SOCIAL_1D.ONG)}</td></tr>
+          <tr><td>Social, 2 dormitorios</td><td>OG ${money(p.antes.SOCIAL_2D.OG)} / ONG ${money(p.antes.SOCIAL_2D.ONG)}</td><td>OG ${money(p.desde.SOCIAL_2D.OG)} / ONG ${money(p.desde.SOCIAL_2D.ONG)}</td></tr>
+          <tr><td>Ecológica</td><td>OG ${money(p.antes.ECOLOGICA.OG)}</td><td>OG ${money(p.desde.ECOLOGICA.OG)}</td></tr>
+        </tbody>
+      </table></div>
+    </div>`;
+  document.getElementById('decisiones-list').innerHTML = cards + tablaPrecios;
+}
+
+// ---------- Navegacion de tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('main > section').forEach(s => s.hidden = true);
+    document.getElementById('tab-' + btn.dataset.tab).hidden = false;
+  });
+});
+
+document.getElementById('org-search').addEventListener('input', e => pintarArbol(e.target.value));
+
+pintarResumen();
+pintarPeriodo();
+pintarGraficos();
+pintarEstadoPago();
+pintarArbol('');
+pintarFiltrosReportes();
+aplicarFiltrosReportes();
+pintarVisocRef();
+pintarReclamos();
+pintarSueltos();
+pintarDecisiones();
+</script>
+</body>
+</html>
