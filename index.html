@@ -125,7 +125,7 @@
 
   <section id="tab-pago" hidden>
     <h2>1° Vivienda y Estado de Pago</h2>
-    <div class="note">"OP" (Orden de Pago) en el Motivo Pase significa que el expediente ya está <b>pagado</b>. "Remito para control" significa que está <b>en trámite en Economía</b>, todavía no pagado. "(1° VIVIENDA)" en el Motivo marca la primera solicitud de esa ONG — ahí corresponde el pago de Herramientas (no el costo completo de la vivienda: Herramientas es solo un componente chico del precio, $500 mil a $800 mil según el período, sobre un total de $8 a $14 millones — ver pestaña Decisiones). Se excluyeron del dataset los Baños y las solicitudes que referencian un expediente anterior a 2026 (ver "Qué quedó suelto").</div>
+    <div class="note">"OP" (Orden de Pago) en el Motivo Pase significa que el expediente ya está <b>pagado</b>. "Remito para control" significa que está <b>en trámite en Economía</b>, todavía no pagado. "(1° VIVIENDA)" en el Motivo marca la primera solicitud de esa ONG — ahí corresponde el pago de Herramientas, un componente chico del precio ($500 mil a $800 mil según el período, sobre un total de $8 a $14 millones). La torta "Monto por balde ($)" usa el precio completo (Social, 2 dormitorios, ONG — supuesto base del informe), no Herramientas — ver pestaña Decisiones. Se excluyeron del dataset los Baños y las solicitudes que referencian un expediente anterior a 2026 (ver "Qué quedó suelto").</div>
     <div class="stat-row" id="pago-stats"></div>
 
     <h3 style="margin-top:24px">Gráficos</h3>
@@ -353,11 +353,24 @@ function pintarEstadoPago(){
     <div class="stat" title="De las ${pv.organizaciones_unicas} organizaciones de 1° vivienda, cuántas tienen algún vínculo detectado en los 3 reportes de VISOC (piso, no exacto).">${'<b>'+pv.organizaciones_con_visoc+' de '+pv.organizaciones_unicas+'</b>'}Organizaciones con vínculo en VISOC</div>
   `;
 
+  // Monto por balde (Con OP / Economía / En Trámite), solo para las pv.total Primeras
+  // Viviendas: a diferencia de Herramientas (un componente chico, ver Decisiones), acá
+  // se usa el precio COMPLETO de la tabla de precios (Social, 2 dormitorios, ONG — las
+  // 72 Primeras Viviendas son todas ONG-Social, y 2D es el supuesto base que ya
+  // confirmó el área para todo el informe), según la fecha de cada solicitud.
+  const primeras = EXPEDIENTES.filter(e => e.primera_vivienda);
+  const baldesPrimeraMonto = {};
+  primeras.forEach(e => {
+    const precio = (DATA.precios[e.periodo_precio] || {}).SOCIAL_2D?.ONG || 0;
+    baldesPrimeraMonto[e.balde] = (baldesPrimeraMonto[e.balde] || 0) + precio;
+  });
+
   document.getElementById('charts-estado-pago').innerHTML = `
     <div class="chart-card"><h3 title="Solicitudes con &quot;(1° VIVIENDA)&quot; en el Motivo, partidas por lo que dice su Motivo Pase.">Primeras Viviendas (${totalPrimera}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_primera)}</div>
     <div class="chart-card"><h3 title="Todas las solicitudes limpias del período (sin Guarda Temporal, sin Baños, sin referencia a expediente anterior), partidas por lo que dice su Motivo Pase.">Todas las solicitudes (${totalTodas}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_todas)}</div>
     <div class="chart-card"><h3 title="Según el export del área 'INCLUSIONES CON ORDEN DE PAGO' (243 de 1003, más confiable que adivinar 'OP' por texto: ese texto muestra el ÚLTIMO paso, y puede decir otra cosa aunque el expediente ya haya tenido orden de pago antes).">Orden de Pago — confirmado por el área</h3>${pieSVG(DATA.graficos.orden_pago)}</div>
     <div class="chart-card"><h3 title="Las ${pv.total} Primeras Viviendas, en los 3 baldes acordados con el área: Con OP / En trámite en Economía / En Trámite.">Primeras Viviendas — Con OP / Economía / En Trámite</h3>${pieSVG(DATA.graficos.pago_baldes_primera)}</div>
+    <div class="chart-card"><h3 title="Mismos baldes de arriba, pero en $: precio de Social 2 dormitorios ONG (supuesto base del informe) según la fecha de cada solicitud (antes/después del 1-ago-2026) — no el monto de Herramientas. Es un estimado de lista, no un monto ejecutado. Ver pestaña Decisiones.">Primeras Viviendas — Monto por balde ($)</h3>${pieSVG(baldesPrimeraMonto, 180, true)}</div>
     <div class="chart-card"><h3 title="Departamento sacado del texto de la solicitud, solo para las ${pv.total} Primeras Viviendas.">Primeras Viviendas — Distribución geográfica</h3>${pieSVG(DATA.graficos.geografico_primera)}</div>
     <div class="chart-card"><h3 title="De las ${pv.total} Primeras Viviendas, cuántas caen antes vs. después del cambio de presupuesto del 1-ago-2026.">Primeras Viviendas — Período de presupuesto</h3>${pieSVG({'Antes de ago-2026': pv.periodo_antes, 'Desde ago-2026': pv.periodo_desde})}</div>
   `;
@@ -644,7 +657,7 @@ function pintarDecisiones(){
       x: `Se sigue calculando sobre las viviendas <b>Activadas de VISOC</b> (no sobre lo solicitado), porque el área confirmó que activar la vivienda es lo que dispara el desembolso — pero esa es la misma cifra que se acaba de desestimar como base de Inicio Trámite por no ser trazable. <b>Todavía no se resolvió</b> si Montos debería pasar a calcularse sobre "Con Orden de Pago" (243, trazable) en vez de Activadas (1097). Además, el presupuesto cambió el 1° de agosto de 2026 y VISOC no guarda la fecha de activación, así que se usa el precio nuevo para todas como aproximación. <b>A confirmar con el área:</b> ¿pasamos Montos a la base de Orden de Pago?` },
     { t: 'Ítem Herramientas', c: true,
       x: `Se encontró la marca real: 72 de las 1003 solicitudes GDE dicen "(1° VIVIENDA)" al final del texto — y las 72 son ONG y de tipo Social, exactamente donde corresponde Herramientas. Se usa la proporción (72 sobre el total de solicitudes Social-ONG) aplicada a las Activadas ONG-Social para estimar cuántas son "1° vivienda", y se valoriza al precio de Herramientas — misma base de Activadas que el punto anterior. <b>A confirmar:</b> ¿esa marca "(1° VIVIENDA)" identifica de forma confiable la primera solicitud de cada ONG?
-      <br><br><b>Ojo, esto NO es el costo de la vivienda:</b> Herramientas es un componente chico del precio (Materiales + Mano de Obra + Herramientas = precio total) — $500.000 antes de agosto, $800.000 desde agosto, sobre un total de $8 a $14 millones según tipo y período (ver tabla de precios más abajo). Se probó una torta que repartía el total de Herramientas (~$61,7M) entre las Primeras Viviendas por balde de pago, y dio números como "$21M para 25 viviendas con OP" — el área lo marcó como imposible, con razón: comparado contra el precio real (~$10-14M por vivienda), esa cifra da la impresión de un costo muy por debajo del real, cuando en realidad nunca pretendió representar el costo total. Se sacó esa torta del informe.` },
+      <br><br><b>Ojo, esto NO es el costo de la vivienda:</b> Herramientas es un componente chico del precio (Materiales + Mano de Obra + Herramientas = precio total) — $500.000 antes de agosto, $800.000 desde agosto, sobre un total de $8 a $14 millones según tipo y período (ver tabla de precios más abajo). Se probó una primera versión de la torta "Primeras Viviendas — Monto por balde" que repartía el total de Herramientas (~$61,7M) por balde de pago, y dio números como "$21M para 25 viviendas con OP" — el área lo marcó como imposible, con razón: comparado contra el precio real (~$10-14M por vivienda), esa cifra da la impresión de un costo muy por debajo del real. <b>Corregido:</b> esa torta ahora usa el precio completo de la tabla (Social, 2 dormitorios, ONG — mismo supuesto de 2D que el resto del informe) según la fecha de cada solicitud, no Herramientas. Con eso, "Con OP" (25) da ~$220M y "En Trámite" (47) da ~$454M — números que sí se condicen con el precio real por vivienda.` },
     { t: 'Distribución geográfica (Capital / Banda / Interior)', c: false,
       x: 'Se saca del departamento mencionado en el texto de la solicitud. En unas 300 de las 1003 no se pudo determinar: los formatos de texto más nuevos usan un código corto (ej. "(A7)") en vez de nombrar el departamento.' },
   ];
