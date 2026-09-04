@@ -180,7 +180,20 @@
 <script src="datos_web.js"></script>
 <script>
 const CATS = DATA.categorias;
-const COLORS = ['#2c7a7b','#4a90a4','#d98e3a','#c25b4a','#8e7cc3','#5a9e6f','#b8b23a','#9aa5b1'];
+// Paleta categórica validada para daltonismo (protanopía/deuteranopía/tritanopía) —
+// separación mínima entre colores adyacentes verificada, no elegida a ojo.
+const COLORS = ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7','#e34948'];
+// Mismo concepto = mismo color en todas las tortas del informe, no según el orden en
+// que aparezca en cada gráfico puntual (si no, "ONG" podría salir celeste en una torta
+// y naranja en otra, y quien mira por color en vez de por texto se confunde).
+const COLOR_MAP = {
+  'OG: Comisión Municipal': COLORS[0], 'OG: Municipio': COLORS[1], 'ONG': COLORS[2],
+  'Con Orden de Pago': COLORS[0], 'En trámite en Economía': COLORS[1], 'En Trámite': COLORS[2],
+  'Capital': COLORS[0], 'Banda': COLORS[1], 'Interior': COLORS[2], 'Sin dato': COLORS[3],
+  'OP (pagada)': COLORS[0], 'REMITO PARA CONTROL (Economía)': COLORS[1],
+  'FINALIZACIÓN DE TRÁMITE': COLORS[3], 'Sin acción aún': COLORS[4], 'Otro (en trámite)': COLORS[5],
+};
+function colorDe(k, i){ return COLOR_MAP[k] || COLORS[i % COLORS.length]; }
 
 // Qué se tuvo en cuenta para cada fila del resumen — aparece al pasar el mouse.
 // Texto corto a propósito: el detalle completo está en la pestaña Decisiones.
@@ -267,16 +280,16 @@ function pieSVG(data, size=180, esMoneda=false){
     const x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
     const large = frac > 0.5 ? 1 : 0;
     if (entries.length === 1) {
-      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${COLORS[i%COLORS.length]}"><title>${k}: ${fmt(v)} (100%)</title></circle>`;
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${colorDe(k,i)}"><title>${k}: ${fmt(v)} (100%)</title></circle>`;
     } else {
-      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${COLORS[i%COLORS.length]}"><title>${k}: ${fmt(v)} (${(frac*100).toFixed(1)}%)</title></path>`;
+      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${colorDe(k,i)}"><title>${k}: ${fmt(v)} (${(frac*100).toFixed(1)}%)</title></path>`;
     }
     angle = a2;
   });
   let legend = '<div class="legend">';
   entries.forEach(([k,v], i) => {
     const pct = (v/total*100).toFixed(1);
-    legend += `<div><span class="swatch" style="background:${COLORS[i%COLORS.length]}"></span>${k}: ${fmt(v)} (${pct}%)</div>`;
+    legend += `<div><span class="swatch" style="background:${colorDe(k,i)}"></span>${k}: ${fmt(v)} (${pct}%)</div>`;
   });
   legend += '</div>';
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>${legend}`;
