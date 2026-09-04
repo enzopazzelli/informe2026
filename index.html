@@ -125,7 +125,7 @@
 
   <section id="tab-pago" hidden>
     <h2>1° Vivienda y Estado de Pago</h2>
-    <div class="note">"OP" (Orden de Pago) en el Motivo Pase significa que el expediente ya está <b>pagado</b>. "Remito para control" significa que está <b>en trámite en Economía</b>, todavía no pagado. "(1° VIVIENDA)" en el Motivo marca la primera solicitud de esa ONG — ahí corresponde el pago de Herramientas. Se excluyeron del dataset los Baños y las solicitudes que referencian un expediente anterior a 2026 (ver "Qué quedó suelto").</div>
+    <div class="note">"OP" (Orden de Pago) en el Motivo Pase significa que el expediente ya está <b>pagado</b>. "Remito para control" significa que está <b>en trámite en Economía</b>, todavía no pagado. "(1° VIVIENDA)" en el Motivo marca la primera solicitud de esa ONG — ahí corresponde el pago de Herramientas. Se excluyeron del dataset los Baños y las solicitudes que referencian un expediente anterior a 2026 (ver "Qué quedó suelto"). Los montos ($) marcados con "~" en los gráficos de Primeras Viviendas son el estimado de Herramientas repartido en proporción a cada porción — no un monto distinto por porción, es el mismo total de siempre dividido.</div>
     <div class="stat-row" id="pago-stats"></div>
 
     <h3 style="margin-top:24px">Gráficos</h3>
@@ -267,8 +267,12 @@ function pintarPeriodo(){
 }
 
 // ---------- Graficos de torta (SVG) ----------
-function pieSVG(data, size=180, esMoneda=false){
+function pieSVG(data, size=180, esMoneda=false, extraFn=null){
+  // extraFn(v): opcional, devuelve un monto estimado para esa porción, que se agrega
+  // como dato secundario (con "~") sin reemplazar la cantidad, que sigue siendo el
+  // dato principal (es lo que define el tamaño de la porción).
   const fmt = esMoneda ? fmtMoney : (v => v);
+  const extra = v => extraFn ? ` · ~${fmtMoney(extraFn(v))}` : '';
   const entries = Object.entries(data).filter(([,v]) => v > 0);
   const total = entries.reduce((s,[,v]) => s+v, 0);
   const r = size/2 - 6, cx = size/2, cy = size/2;
@@ -281,16 +285,16 @@ function pieSVG(data, size=180, esMoneda=false){
     const x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
     const large = frac > 0.5 ? 1 : 0;
     if (entries.length === 1) {
-      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${colorDe(k,i)}"><title>${k}: ${fmt(v)} (100%)</title></circle>`;
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${colorDe(k,i)}"><title>${k}: ${fmt(v)} (100%)${extra(v)}</title></circle>`;
     } else {
-      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${colorDe(k,i)}"><title>${k}: ${fmt(v)} (${(frac*100).toFixed(1)}%)</title></path>`;
+      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${colorDe(k,i)}"><title>${k}: ${fmt(v)} (${(frac*100).toFixed(1)}%)${extra(v)}</title></path>`;
     }
     angle = a2;
   });
   let legend = '<div class="legend">';
   entries.forEach(([k,v], i) => {
     const pct = (v/total*100).toFixed(1);
-    legend += `<div><span class="swatch" style="background:${colorDe(k,i)}"></span>${k}: ${fmt(v)} (${pct}%)</div>`;
+    legend += `<div><span class="swatch" style="background:${colorDe(k,i)}"></span>${k}: ${fmt(v)} (${pct}%)${extra(v)}</div>`;
   });
   legend += '</div>';
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>${legend}`;
@@ -345,13 +349,22 @@ function pintarEstadoPago(){
     <div class="stat" title="De las ${pv.organizaciones_unicas} organizaciones de 1° vivienda, cuántas tienen algún vínculo detectado en los 3 reportes de VISOC (piso, no exacto).">${'<b>'+pv.organizaciones_con_visoc+' de '+pv.organizaciones_unicas+'</b>'}Organizaciones con vínculo en VISOC</div>
   `;
 
+  // Monto estimado por porción, solo para gráficos acotados a las pv.total Primeras
+  // Viviendas: reparte el monto de Herramientas ya estimado (61,674,341 hoy) en
+  // proporción a la cantidad de esa porción sobre el total de 72. Es una segunda
+  // aproximación sobre una ya estimada — se muestra con "~" y en la pestaña Decisiones
+  // se explica de dónde sale el monto de Herramientas. No se aplica a "Todas las
+  // solicitudes" ni a "Orden de Pago" porque esos dos grafican las 1003 solicitudes
+  // completas, no las 72 Primeras Viviendas, y no hay un monto estimado sobre esa base.
+  const montoPorPorcion = v => Math.round(v / pv.total * pv.monto_herramientas_estimado);
+
   document.getElementById('charts-estado-pago').innerHTML = `
-    <div class="chart-card"><h3 title="Solicitudes con &quot;(1° VIVIENDA)&quot; en el Motivo, partidas por lo que dice su Motivo Pase.">Primeras Viviendas (${totalPrimera}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_primera)}</div>
+    <div class="chart-card"><h3 title="Solicitudes con &quot;(1° VIVIENDA)&quot; en el Motivo, partidas por lo que dice su Motivo Pase. El monto ($) reparte el estimado de Herramientas en proporción a la cantidad.">Primeras Viviendas (${totalPrimera}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_primera, 180, false, montoPorPorcion)}</div>
     <div class="chart-card"><h3 title="Todas las solicitudes limpias del período (sin Guarda Temporal, sin Baños, sin referencia a expediente anterior), partidas por lo que dice su Motivo Pase.">Todas las solicitudes (${totalTodas}) — Estado de pago</h3>${pieSVG(DATA.graficos.estado_pago_todas)}</div>
     <div class="chart-card"><h3 title="Según el export del área 'INCLUSIONES CON ORDEN DE PAGO' (243 de 1003, más confiable que adivinar 'OP' por texto: ese texto muestra el ÚLTIMO paso, y puede decir otra cosa aunque el expediente ya haya tenido orden de pago antes).">Orden de Pago — confirmado por el área</h3>${pieSVG(DATA.graficos.orden_pago)}</div>
-    <div class="chart-card"><h3 title="Las ${pv.total} Primeras Viviendas, en los 3 baldes acordados con el área: Con OP / En trámite en Economía / En Trámite.">Primeras Viviendas — Con OP / Economía / En Trámite</h3>${pieSVG(DATA.graficos.pago_baldes_primera)}</div>
-    <div class="chart-card"><h3 title="Departamento sacado del texto de la solicitud, solo para las ${pv.total} Primeras Viviendas.">Primeras Viviendas — Distribución geográfica</h3>${pieSVG(DATA.graficos.geografico_primera)}</div>
-    <div class="chart-card"><h3 title="De las ${pv.total} Primeras Viviendas, cuántas caen antes vs. después del cambio de presupuesto del 1-ago-2026.">Primeras Viviendas — Período de presupuesto</h3>${pieSVG({'Antes de ago-2026': pv.periodo_antes, 'Desde ago-2026': pv.periodo_desde})}</div>
+    <div class="chart-card"><h3 title="Las ${pv.total} Primeras Viviendas, en los 3 baldes acordados con el área: Con OP / En trámite en Economía / En Trámite. El monto ($) reparte el estimado de Herramientas en proporción a la cantidad.">Primeras Viviendas — Con OP / Economía / En Trámite</h3>${pieSVG(DATA.graficos.pago_baldes_primera, 180, false, montoPorPorcion)}</div>
+    <div class="chart-card"><h3 title="Departamento sacado del texto de la solicitud, solo para las ${pv.total} Primeras Viviendas. El monto ($) reparte el estimado de Herramientas en proporción a la cantidad.">Primeras Viviendas — Distribución geográfica</h3>${pieSVG(DATA.graficos.geografico_primera, 180, false, montoPorPorcion)}</div>
+    <div class="chart-card"><h3 title="De las ${pv.total} Primeras Viviendas, cuántas caen antes vs. después del cambio de presupuesto del 1-ago-2026. El monto ($) reparte el estimado de Herramientas en proporción a la cantidad.">Primeras Viviendas — Período de presupuesto</h3>${pieSVG({'Antes de ago-2026': pv.periodo_antes, 'Desde ago-2026': pv.periodo_desde}, 180, false, montoPorPorcion)}</div>
   `;
 
   const orgsPrimera = DATA.organizaciones.filter(o => o.expedientes.some(e => e.primera_vivienda));
